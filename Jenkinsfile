@@ -1,7 +1,7 @@
 pipeline {
     agent any
     tools {
-        terraform 'terraform'
+        terraform 'terra'
         ansible 'ansible'
     }
     environment {
@@ -19,7 +19,7 @@ pipeline {
             steps {
                 withCredentials([[ 
                     $class: 'AmazonWebServicesCredentialsBinding', 
-                    credentialsId: 'aws-credentials', 
+                    credentialsId: 'aws', 
                     accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY' 
                 ]]) {
@@ -42,11 +42,11 @@ pipeline {
 
         stage('Configure VMs') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key-ubuntu', keyFileVariable: 'UBUNTU_KEY')]) {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key-amazon', keyFileVariable: 'AMAZON_KEY')]) {
+                withCredentials([sshUserPrivateKey(credentialsId: 'load', keyFileVariable: 'UBUNTU_KEY')]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'linux', keyFileVariable: 'linux_KEY')]) {
                         dir('ansible') {
                             sh '''
-                                chmod 600 $UBUNTU_KEY $AMAZON_KEY
+                                chmod 600 $UBUNTU_KEY $linux_KEY
                                 export ANSIBLE_HOST_KEY_CHECKING=False
 
                                 ansible-playbook -i inventory.ini playbook_backend.yml --private-key=$UBUNTU_KEY -u ubuntu
