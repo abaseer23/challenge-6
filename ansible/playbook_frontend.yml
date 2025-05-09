@@ -31,7 +31,7 @@
         remote_src: yes
 
     - name: Compile and install Python 3.12.3
-      command:  bash -c "./configure --enable-optimizations && make -j \$(nproc) && make altinstall"
+      command: bash -c "./configure --enable-optimizations && make -j \$(nproc) && make altinstall"
       args:
         chdir: /usr/src/Python-3.12.3
       creates: /usr/local/bin/python3.12
