@@ -10,7 +10,7 @@
       ignore_errors: true  # Add this to ignore errors if SELinux is not available
 
     - name: Disable firewalld
-      package:
+      dnf:
         name: firewalld
         state: absent
 
