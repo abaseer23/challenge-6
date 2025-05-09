@@ -2,7 +2,7 @@
   hosts: frontend
   become: true
   vars:
-    nginx_backend_ip: "3.92.196.48"
+    nginx_backend_ip: "34.238.114.50"
   tasks:
     - name: Disable SELinux (if applicable)
       command: echo "SELinux not applicable on Amazon Linux"
