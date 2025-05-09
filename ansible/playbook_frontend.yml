@@ -2,52 +2,12 @@
   hosts: frontend
   become: true
   vars:
-    nginx_backend_ip: "54.162.98.239"  # Replace with your backend IP
-
+    nginx_backend_ip: "98.81.205.2"  # Define the backend IP here
   tasks:
-    - name: Install required packages for Python build
-      yum:
-        name:
-          - gcc
-          - openssl-devel
-          - bzip2-devel
-          - libffi-devel
-          - wget
-          - make
-          - zlib-devel
-          - tar
-        state: present
-
-    - name: Download Python 3.12.3 source
-      get_url:
-        url: https://www.python.org/ftp/python/3.12.3/Python-3.12.3.tgz
-        dest: /usr/src/Python-3.12.3.tgz
-
-    - name: Extract Python 3.12.3 source
-      unarchive:
-        src: /usr/src/Python-3.12.3.tgz
-        dest: /usr/src/
-        remote_src: yes
-
-    - name: Compile and install Python 3.12.3
-      shell: |
-        cd /usr/src/Python-3.12.3
-        ./configure --enable-optimizations
-        make -j "$(nproc)"
-        make altinstall
-      args:
-        creates: /usr/local/bin/python3.12
-
-    - name: Set Python 3.12 as default python3
-      alternatives:
-        name: python3
-        path: /usr/local/bin/python3.12
-        priority: 1
-
     - name: Disable SELinux
       command: echo "SELinux not applicable on Amazon Linux"
       changed_when: false
-      ignore_errors: true
+      ignore_errors: true  # Add this to ignore errors if SELinux is not available
 
     - name: Disable firewalld
       yum:
@@ -70,3 +30,43 @@
         content: |
           user nginx;
           worker_processes auto;
+          pid /var/run/nginx.pid;
+
+          events {
+            worker_connections 1024;
+          }
+
+          http {
+            include       /etc/nginx/mime.types;
+            default_type  application/octet-stream;
+            access_log    /var/log/nginx/access.log;
+            error_log     /var/log/nginx/error.log;
+
+            sendfile        on;
+            tcp_nopush      on;
+            tcp_nodelay     on;
+            keepalive_timeout 65;
+            types_hash_max_size 2048;
+
+            include /etc/nginx/conf.d/*.conf;
+
+            # Reverse proxy settings for backend
+            server {
+                listen 80;
+                server_name c8.local;
+
+                location / {
+                    proxy_pass http://{{ nginx_backend_ip }}:19999;  # Proxy to the backend server's IP and port 19999 (Netdata)
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+            }
+          }
+
+    - name: Ensure Nginx is running
+      service:
+        name: nginx
+        state: started
+        enabled: yes
