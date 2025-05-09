@@ -16,9 +16,9 @@
         replace: 'SELINUX=disabled'
 
     - name: Stop and disable firewalld
-      service:
+      dnf:
         name: firewalld
-        state: stopped
+        state: absent
         enabled: no
 
     - name: Install EPEL repository
