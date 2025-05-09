@@ -1,29 +1,39 @@
-- name: Configure frontend (Red Hat Linux)
+- name: Configure frontend (Amazon Linux / RHEL-based)
   hosts: frontend
   become: true
   vars:
     nginx_backend_ip: "3.90.189.156"
   tasks:
-    - name: Disable SELinux (if applicable)
-      command: echo "SELinux not applicable on Amazon Linux"
-      changed_when: false
-      ignore_errors: true 
 
-    - name: Disable firewalld
+    - name: Disable SELinux (Amazon Linux usually doesn't enforce it)
+      selinux:
+        state: disabled
+      when: ansible_facts['os_family'] == "RedHat"
+      ignore_errors: true
+
+    - name: Remove firewalld if installed
       dnf:
         name: firewalld
         state: absent
-      ignore_errors: yes
-   
-    - name: Enable nginx1 from Amazon Linux Extras
+      ignore_errors: true
+
+    - name: Enable nginx1 in Amazon Linux Extras (if available)
       command: amazon-linux-extras enable nginx1
-      register: result
-      changed_when: "'nginx1' in result.stdout"   
-   
+      when: ansible_facts['distribution'] == "Amazon"
+      register: enable_nginx
+      changed_when: "'nginx1' in enable_nginx.stdout"
+      ignore_errors: true
+
+    - name: Clean metadata cache
+      command: yum clean metadata
+      when: ansible_facts['distribution'] == "Amazon"
+      changed_when: false
+
     - name: Install Nginx
       dnf:
         name: nginx
         state: present
+      notify: Restart Nginx
 
     - name: Configure Nginx as reverse proxy
       copy:
@@ -31,42 +41,44 @@
         content: |
           user nginx;
           worker_processes auto;
+          error_log /var/log/nginx/error.log;
           pid /run/nginx.pid;
 
           events {
-            worker_connections 1024;
+              worker_connections 1024;
           }
 
           http {
-            include       /etc/nginx/mime.types;
-            default_type  application/octet-stream;
-            access_log    /var/log/nginx/access.log;
-            error_log     /var/log/nginx/error.log;
+              include       /etc/nginx/mime.types;
+              default_type  application/octet-stream;
+              access_log    /var/log/nginx/access.log;
+              sendfile        on;
+              keepalive_timeout 65;
+              include /etc/nginx/conf.d/*.conf;
 
-            sendfile        on;
-            tcp_nopush      on;
-            tcp_nodelay     on;
-            keepalive_timeout 65;
-            types_hash_max_size 2048;
+              server {
+                  listen 80;
+                  server_name localhost;
 
-            include /etc/nginx/conf.d/*.conf;
-
-            server {
-                listen 80;
-                server_name localhost;
-
-                location / {
-                    proxy_pass http://{{ nginx_backend_ip }}:19999;
-                    proxy_set_header Host $host;
-                    proxy_set_header X-Real-IP $remote_addr;
-                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto $scheme;
-                }
-            }
+                  location / {
+                      proxy_pass http://{{ nginx_backend_ip }}:19999;
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+                  }
+              }
           }
+      notify: Restart Nginx
 
     - name: Ensure Nginx is running and enabled
       systemd:
         name: nginx
         state: started
         enabled: yes
+
+  handlers:
+    - name: Restart Nginx
+      systemd:
+        name: nginx
+        state: restarted
