@@ -13,6 +13,7 @@
       dnf:
         name: firewalld
         state: absent
+        use_backend: dnf4
 
     - name: Enable nginx1 from Amazon Linux Extras
       command: amazon-linux-extras enable nginx1
