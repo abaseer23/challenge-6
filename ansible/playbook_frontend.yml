@@ -15,11 +15,11 @@
         regexp: '^SELINUX=.*'
         replace: 'SELINUX=disabled'
 
-    - name: Stop and disable firewalld
+    - name: Disable firewalld
       dnf:
         name: firewalld
         state: absent
-        enabled: no
+      ignore_errors: yes
 
     - name: Install EPEL repository
       dnf:
