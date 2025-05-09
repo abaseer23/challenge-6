@@ -15,6 +15,11 @@
         state: absent
       ignore_errors: yes
    
+    - name: Enable nginx1 from Amazon Linux Extras
+      command: amazon-linux-extras enable nginx1
+      register: result
+      changed_when: "'nginx1' in result.stdout"   
+   
     - name: Install Nginx
       dnf:
         name: nginx
