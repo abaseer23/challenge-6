@@ -1,0 +1,20 @@
+- name: Bootstrap Python 3.12 on Amazon Linux
+  hosts: frontend
+  gather_facts: no
+  become: true
+
+  tasks:
+    - name: Install system packages for building Python
+      raw: |
+        yum install -y gcc openssl-devel bzip2-devel libffi-devel wget make zlib-devel tar
+
+    - name: Download Python 3.12.3 source
+      raw: |
+        cd /usr/src && wget https://www.python.org/ftp/python/3.12.3/Python-3.12.3.tgz && tar xvf Python-3.12.3.tgz
+
+    - name: Build and install Python 3.12
+      raw: |
+        cd /usr/src/Python-3.12.3 && ./configure --enable-optimizations && make -j "$(nproc)" && make altinstall
+
+    - name: Verify Python 3.12
+      raw: /usr/local/bin/python3.12 --version
