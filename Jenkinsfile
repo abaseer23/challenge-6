@@ -46,7 +46,7 @@ pipeline {
                     withCredentials([sshUserPrivateKey(credentialsId: 'linux', keyFileVariable: 'linux_KEY')]) {
                         dir('ansible') {
                             sh '''
-                                chmod 600 $UBUNTU_KEY $linux_KEY
+                                chmod 400 $UBUNTU_KEY $linux_KEY
                                 export ANSIBLE_HOST_KEY_CHECKING=False
 
                                 ansible-playbook -i inventory.ini playbook_backend.yml --private-key=$UBUNTU_KEY -u ubuntu
