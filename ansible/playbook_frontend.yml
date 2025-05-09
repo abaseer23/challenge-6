@@ -2,10 +2,9 @@
   hosts: frontend
   become: true
   vars:
-    nginx_backend_ip: "54.162.98.239"  # Define your backend IP here
+    nginx_backend_ip: "54.162.98.239"  # Replace with your backend IP
 
   tasks:
-    # Install required packages for Python build
     - name: Install required packages for Python build
       yum:
         name:
@@ -31,10 +30,13 @@
         remote_src: yes
 
     - name: Compile and install Python 3.12.3
-      command: bash -c "./configure --enable-optimizations && make -j \$(nproc) && make altinstall"
+      shell: |
+        cd /usr/src/Python-3.12.3
+        ./configure --enable-optimizations
+        make -j "$(nproc)"
+        make altinstall
       args:
-        chdir: /usr/src/Python-3.12.3
-      creates: /usr/local/bin/python3.12
+        creates: /usr/local/bin/python3.12
 
     - name: Set Python 3.12 as default python3
       alternatives:
@@ -42,7 +44,6 @@
         path: /usr/local/bin/python3.12
         priority: 1
 
-    # System and network configuration
     - name: Disable SELinux
       command: echo "SELinux not applicable on Amazon Linux"
       changed_when: false
@@ -69,43 +70,3 @@
         content: |
           user nginx;
           worker_processes auto;
-          pid /var/run/nginx.pid;
-
-          events {
-            worker_connections 1024;
-          }
-
-          http {
-            include       /etc/nginx/mime.types;
-            default_type  application/octet-stream;
-            access_log    /var/log/nginx/access.log;
-            error_log     /var/log/nginx/error.log;
-
-            sendfile        on;
-            tcp_nopush      on;
-            tcp_nodelay     on;
-            keepalive_timeout 65;
-            types_hash_max_size 2048;
-
-            include /etc/nginx/conf.d/*.conf;
-
-            # Reverse proxy settings for backend
-            server {
-                listen 80;
-                server_name c8.local;
-
-                location / {
-                    proxy_pass http://{{ nginx_backend_ip }}:19999;
-                    proxy_set_header Host $host;
-                    proxy_set_header X-Real-IP $remote_addr;
-                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto $scheme;
-                }
-            }
-          }
-
-    - name: Ensure Nginx is running
-      service:
-        name: nginx
-        state: started
-        enabled: yes
