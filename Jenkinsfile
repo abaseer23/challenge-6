@@ -48,7 +48,7 @@ pipeline {
                             sh '''
                                 chmod 600 $UBUNTU_KEY $AMAZON_KEY
                                 export ANSIBLE_HOST_KEY_CHECKING=False
-                                ansible-playbook -i inventory.ini bootstrap_python.yml --private-key=$AMAZON_KEY -u ec2-user
+                                
                                 ansible-playbook -i inventory.ini playbook_backend.yml --private-key=$UBUNTU_KEY -u ubuntu
                                 ansible-playbook -i inventory.ini playbook_frontend.yml --private-key=$AMAZON_KEY -u ec2-user
                             '''
