@@ -6,7 +6,12 @@ resource "aws_instance" "frontend" {
   ami           = "ami-085386e29e44dacd7"
   instance_type = "t2.micro"
   key_name      = "load"
-
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo yum update -y
+              sudo yum install epel-release -y
+              sudo yum install python3 -y
+              EOF
   tags = {
     Name = "c8.local"
   }
