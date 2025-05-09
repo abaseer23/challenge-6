@@ -17,13 +17,6 @@
         state: absent
       ignore_errors: true
 
-    - name: Enable nginx1 in Amazon Linux Extras (if available)
-      command: amazon-linux-extras enable nginx1
-      when: ansible_facts['distribution'] == "Amazon"
-      register: enable_nginx
-      changed_when: "'nginx1' in enable_nginx.stdout"
-      ignore_errors: true
-
     - name: Clean metadata cache
       command: yum clean metadata
       when: ansible_facts['distribution'] == "Amazon"
