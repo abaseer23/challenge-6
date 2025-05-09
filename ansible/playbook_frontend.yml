@@ -20,12 +20,7 @@
         name: firewalld
         state: absent
       ignore_errors: yes
-
-    - name: Install EPEL repository
-      dnf:
-        name: epel-release
-        state: present
-
+   
     - name: Install Nginx
       dnf:
         name: nginx
