@@ -42,11 +42,11 @@ pipeline {
 
         stage('Configure VMs') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'load', keyFileVariable: 'UBUNTU_KEY')]) {
+                withCredentials([sshUserPrivateKey(credentialsId: 'ubuntu', keyFileVariable: 'UBUNTU_KEY')]) {
                     withCredentials([sshUserPrivateKey(credentialsId: 'linux', keyFileVariable: 'linux_KEY')]) {
                         dir('ansible') {
                             sh '''
-                                chmod 400 $UBUNTU_KEY $linux_KEY
+                                chmod 600 $UBUNTU_KEY $linux_KEY
                                 export ANSIBLE_HOST_KEY_CHECKING=False
 
                                 ansible-playbook -i inventory.ini playbook_backend.yml --private-key=$UBUNTU_KEY -u ubuntu
