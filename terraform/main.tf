@@ -10,6 +10,7 @@ resource "aws_instance" "frontend" {
               #!/bin/bash
               sudo yum update -y
               sudo yum install epel-release -y
+              sudo yum update -y
               sudo yum install python3 -y
               EOF
   tags = {
