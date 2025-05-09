@@ -10,10 +10,9 @@
       ignore_errors: true  # Add this to ignore errors if SELinux is not available
 
     - name: Disable firewalld
-      yum:
+      dnf:
         name: firewalld
         state: absent
-        use_backend: dnf4
 
     - name: Enable nginx1 from Amazon Linux Extras
       command: amazon-linux-extras enable nginx1
@@ -21,7 +20,7 @@
       changed_when: "'nginx1' in result.stdout"
 
     - name: Install Nginx
-      yum:
+      dnf:
         name: nginx
         state: present
 
