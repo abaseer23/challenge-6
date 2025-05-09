@@ -1,23 +1,30 @@
-- name: Configure frontend (Amazon Linux 2)
+- name: Configure frontend (Red Hat Linux)
   hosts: frontend
   become: true
   vars:
-    nginx_backend_ip: "3.92.196.48"  # Define the backend IP here
+    nginx_backend_ip: "3.92.196.48"
   tasks:
-    - name: Disable SELinux
-      command: echo "SELinux not applicable on Amazon Linux"
-      changed_when: false
-      ignore_errors: true  # Add this to ignore errors if SELinux is not available
+    - name: Disable SELinux temporarily
+      command: setenforce 0
+      when: ansible_selinux.status == "enabled"
+      ignore_errors: yes
 
-    - name: Disable firewalld
-      dnf:
+    - name: Permanently disable SELinux
+      replace:
+        path: /etc/selinux/config
+        regexp: '^SELINUX=.*'
+        replace: 'SELINUX=disabled'
+
+    - name: Stop and disable firewalld
+      service:
         name: firewalld
-        state: absent
+        state: stopped
+        enabled: no
 
-    - name: Enable nginx1 from Amazon Linux Extras
-      command: amazon-linux-extras enable nginx1
-      register: result
-      changed_when: "'nginx1' in result.stdout"
+    - name: Install EPEL repository
+      dnf:
+        name: epel-release
+        state: present
 
     - name: Install Nginx
       dnf:
@@ -30,7 +37,7 @@
         content: |
           user nginx;
           worker_processes auto;
-          pid /var/run/nginx.pid;
+          pid /run/nginx.pid;
 
           events {
             worker_connections 1024;
@@ -50,13 +57,12 @@
 
             include /etc/nginx/conf.d/*.conf;
 
-            # Reverse proxy settings for backend
             server {
                 listen 80;
-                server_name c8.local;
+                server_name localhost;
 
                 location / {
-                    proxy_pass http://{{ nginx_backend_ip }}:19999;  # Proxy to the backend server's IP and port 19999 (Netdata)
+                    proxy_pass http://{{ nginx_backend_ip }}:19999;
                     proxy_set_header Host $host;
                     proxy_set_header X-Real-IP $remote_addr;
                     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -65,7 +71,7 @@
             }
           }
 
-    - name: Ensure Nginx is running
+    - name: Ensure Nginx is running and enabled
       service:
         name: nginx
         state: started
