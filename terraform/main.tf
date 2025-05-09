@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_instance" "frontend" {
-  ami           = "ami-085386e29e44dacd7"
+  ami           = "ami-0c15e602d3d6c6c4a"
   instance_type = "t2.micro"
   key_name      = "load"
   user_data = <<-EOF
