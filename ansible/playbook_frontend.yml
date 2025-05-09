@@ -4,16 +4,10 @@
   vars:
     nginx_backend_ip: "3.92.196.48"
   tasks:
-    - name: Disable SELinux temporarily
-      command: setenforce 0
-      when: ansible_selinux.status == "enabled"
-      ignore_errors: yes
-
-    - name: Permanently disable SELinux
-      replace:
-        path: /etc/selinux/config
-        regexp: '^SELINUX=.*'
-        replace: 'SELINUX=disabled'
+    - name: Disable SELinux (if applicable)
+      command: echo "SELinux not applicable on Amazon Linux"
+      changed_when: false
+      ignore_errors: true 
 
     - name: Disable firewalld
       dnf:
