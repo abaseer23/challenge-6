@@ -9,7 +9,7 @@ resource "aws_instance" "frontend" {
   user_data = <<-EOF
               #!/bin/bash
               sudo yum update -y
-              sudo yum install epel-release -y
+              sudo amazon-linux-extras install epel -y
               sudo yum update -y
               sudo yum install python3 -y
               EOF
