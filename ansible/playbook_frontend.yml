@@ -2,12 +2,52 @@
   hosts: frontend
   become: true
   vars:
-    nginx_backend_ip: "54.162.98.239"  # Define the backend IP here
+    nginx_backend_ip: "54.162.98.239"  # Define your backend IP here
+
   tasks:
+    # Install required packages for Python build
+    - name: Install required packages for Python build
+      yum:
+        name:
+          - gcc
+          - openssl-devel
+          - bzip2-devel
+          - libffi-devel
+          - wget
+          - make
+          - zlib-devel
+          - tar
+        state: present
+
+    - name: Download Python 3.12.3 source
+      get_url:
+        url: https://www.python.org/ftp/python/3.12.3/Python-3.12.3.tgz
+        dest: /usr/src/Python-3.12.3.tgz
+
+    - name: Extract Python 3.12.3 source
+      unarchive:
+        src: /usr/src/Python-3.12.3.tgz
+        dest: /usr/src/
+        remote_src: yes
+
+    - name: Compile and install Python 3.12.3
+      command: >
+        ./configure --enable-optimizations && make -j "$(nproc)" && make altinstall
+      args:
+        chdir: /usr/src/Python-3.12.3
+      creates: /usr/local/bin/python3.12
+
+    - name: Set Python 3.12 as default python3
+      alternatives:
+        name: python3
+        path: /usr/local/bin/python3.12
+        priority: 1
+
+    # System and network configuration
     - name: Disable SELinux
       command: echo "SELinux not applicable on Amazon Linux"
       changed_when: false
-      ignore_errors: true  # Add this to ignore errors if SELinux is not available
+      ignore_errors: true
 
     - name: Disable firewalld
       yum:
@@ -56,7 +96,7 @@
                 server_name c8.local;
 
                 location / {
-                    proxy_pass http://{{ nginx_backend_ip }}:19999;  # Proxy to the backend server's IP and port 19999 (Netdata)
+                    proxy_pass http://{{ nginx_backend_ip }}:19999;
                     proxy_set_header Host $host;
                     proxy_set_header X-Real-IP $remote_addr;
                     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
